@@ -7,6 +7,7 @@ Demo data is fictional and for demonstration purposes only.
 from __future__ import annotations
 import asyncio
 import asyncpg
+from datetime import date
 import os
 from dotenv import load_dotenv
 
@@ -57,7 +58,7 @@ async def seed():
                 """,
                 p["patient_id"],
                 p["full_name"],
-                p["dob"],
+                date.fromisoformat(p["dob"]),
                 p["gender"],
                 p["phone"],
                 p["city"],

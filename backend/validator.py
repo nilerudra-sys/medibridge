@@ -30,6 +30,12 @@ def validate_fhir_patient(resource_dict: dict) -> Tuple[bool, str]:
         normalised = json.loads(json.dumps(resource_dict, default=str))
 
         patient = Patient.model_validate(normalised)
+
+        # Value-set check: FHIR R4 AdministrativeGender
+        fhir_gender = normalised.get("gender")
+        if fhir_gender and fhir_gender not in {"male", "female", "other", "unknown"}:
+            return False, f"Invalid — gender '{fhir_gender}' is not in FHIR R4 AdministrativeGender value set"
+
         # Re-serialise to confirm round-trip
         _ = patient.model_dump()
         return True, "Valid — fhir.resources R4 structural validation passed"

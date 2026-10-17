@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Build artifacts
+frontend/dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+medibridge_pgdata/
+
+# Test scripts (keep in repo but ignore outputs)
+*.log
+
+# Misc
+*.bak
+*.tmp
