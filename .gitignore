@@ -26,3 +26,6 @@ medibridge_pgdata/
 # Misc
 *.bak
 *.tmp
+
+.env.*
+!.env.example
