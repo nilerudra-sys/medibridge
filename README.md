@@ -1,8 +1,46 @@
-# MediBridge MVP
+# MediBridge — clinic records to FHIR R4, automatically
 
-A lightweight SQL-to-FHIR R4 interoperability system for small clinics.
+Small clinics keep patient records in ordinary SQL databases. Sharing them with hospitals, labs or insurers increasingly requires **HL7 FHIR R4**, the healthcare data standard. MediBridge sits next to a clinic's existing database and turns every new or updated patient record into a validated FHIR R4 `Patient` resource, with no change to how staff register patients.
 
-**Demo flow:** Register patient → Store in PostgreSQL → PostgreSQL trigger → Change log → Background worker → FHIR R4 conversion → Validation → View FHIR JSON → Retrieve via API.
+**Flow:** Register patient → PostgreSQL → trigger writes to `change_log` → background worker → FHIR R4 mapping → validation → available through a FHIR API and a web UI.
+
+## The problem
+
+- Clinic software stores data in its own SQL schema; other systems expect FHIR.
+- Converting records by hand is slow, error-prone and never up to date.
+- Small clinics can't afford enterprise integration engines.
+
+## What it does
+
+- **Register and edit patients** in a simple web UI (React).
+- **Detects every change automatically** with PostgreSQL triggers, without touching the clinic's application code.
+- **Converts each record to FHIR R4** in a background worker, usually within a few seconds.
+- **Validates** every resource against the FHIR R4 structure before exposing it.
+- **Serves FHIR** at `/fhir/Patient` and `/fhir/Patient/{id}`, plus a dashboard with converted / pending / failed counts and a sync monitor.
+
+## Design decisions and trade-offs
+
+| Decision | Why | Trade-off accepted |
+| --- | --- | --- |
+| Change capture with **PostgreSQL triggers + a `change_log` table** | Captures every insert and update at the database level, so the clinic's existing app needs no changes | Ties the design to PostgreSQL |
+| Conversion in an **async background worker**, not in the request | Registering a patient stays fast; a mapping failure never blocks clinic staff | Records are eventually consistent (seconds, not instant) |
+| Per-record sync status (converted / pending / failed) | Staff and admins can see exactly what failed and retry, instead of silent data loss | Extra state to maintain |
+| Structural validation with `fhir.resources` instead of the HAPI FHIR Validator | Pure Python, no Java runtime to deploy | Checks R4 structure, not full profile and terminology rules |
+
+```mermaid
+flowchart LR
+    A[React UI] -->|REST| B[FastAPI]
+    B --> C[(PostgreSQL<br/>patients)]
+    C -- trigger --> D[(change_log)]
+    D --> E[Background worker]
+    E --> F[FHIR R4 mapper]
+    F --> G[Validator<br/>fhir.resources]
+    G --> H[/fhir/Patient API/]
+```
+
+## Status
+
+A working MVP, built as a semester project. It runs locally with Docker; demo data uses fictional patients only. **Next:** map `Encounter` and `Observation` resources, and add a hosted demo.
 
 ---
 
@@ -37,7 +75,7 @@ A lightweight SQL-to-FHIR R4 interoperability system for small clinics.
 ### Step 1 — Start PostgreSQL
 
 ```powershell
-# From project root (d:\pbl_sem_7)
+# From the project root
 docker compose up -d
 ```
 
@@ -49,7 +87,7 @@ docker ps  # should show medibridge_postgres as healthy
 ### Step 2 — Install & start the backend
 
 ```powershell
-cd d:\pbl_sem_7\backend
+cd backend
 pip install -r requirements.txt
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -62,7 +100,7 @@ Swagger docs: **http://localhost:8000/docs**
 Open a **second terminal**:
 
 ```powershell
-cd d:\pbl_sem_7\backend
+cd backend
 python seed.py
 ```
 
@@ -74,7 +112,7 @@ The background worker will process them within ~3 seconds.
 Open a **third terminal**:
 
 ```powershell
-cd d:\pbl_sem_7\frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -83,7 +121,7 @@ The frontend starts at **http://localhost:5173**
 
 ---
 
-## Demo Workflow (for faculty presentation)
+## Demo walkthrough
 
 See [`demo_script.md`](./demo_script.md) for the step-by-step demonstration guide.
 
@@ -108,7 +146,7 @@ See [`demo_script.md`](./demo_script.md) for the step-by-step demonstration guid
 ## Project Structure
 
 ```
-d:\pbl_sem_7\
+medibridge/
 ├── backend\
 │   ├── main.py           # FastAPI app + lifespan worker
 │   ├── database.py       # asyncpg connection pool

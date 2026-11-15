@@ -8,7 +8,7 @@
 ## Before the Demo
 
 Ensure all three are running:
-- ✅ Docker PostgreSQL: `docker compose up -d` (from `d:\pbl_sem_7`)
+- ✅ Docker PostgreSQL: `docker compose up -d` (from the project root)
 - ✅ Backend: `python -m uvicorn main:app --port 8000 --reload` (from `backend\`)
 - ✅ Frontend: `npm run dev` (from `frontend\`)
 - ✅ Seed data loaded: `python seed.py` (from `backend\`)
