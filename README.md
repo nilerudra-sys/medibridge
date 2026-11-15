@@ -35,7 +35,7 @@ flowchart LR
     D --> E[Background worker]
     E --> F[FHIR R4 mapper]
     F --> G[Validator<br/>fhir.resources]
-    G --> H[/fhir/Patient API/]
+    G --> H["FHIR API<br/>/fhir/Patient"]
 ```
 
 ## Status
